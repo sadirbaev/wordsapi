@@ -100,9 +100,59 @@ I have used [Fuzzy Query](https://www.elastic.co/guide/en/elasticsearch/referenc
 * Removing a character (black → lack)
 * Inserting a character (sic → sick)
 * Transposing two adjacent characters (act → cat)<br />
+cURL request for fuzzy query,
+```
+{
+  "query": {
+    "fuzzy": {
+      "word": {
+        "value": "like",
+        "fuzziness": 2
+      }
+    }
+  }
+}
+```
 
 In my case fuziness is set as 2. It returns results, even there are typo mistake with 2 random characters.<br /><br />
-For searching sentences, I have used [Span Near Query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-span-near-query.html). In the task, it was asked searching unordered words so I have disabled `in_order` and slop equals to number of words in the entered sentence.<br /><br />
+For searching sentences, I have used [Span Near Query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-span-near-query.html). In the task, it was asked searching unordered words so I have disabled `in_order` and slop equals to number of words in the entered sentence.<br />
+cURL request for span near query,
+```
+{
+    "query": {
+        "span_near": {
+            "clauses": [
+                {
+                    "span_multi": {
+                        "match": {
+                            "fuzzy": {
+                                "examples": {
+                                    "fuzziness": "2",
+                                    "value": "the"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "span_multi": {
+                        "match": {
+                            "fuzzy": {
+                                "examples": {
+                                    "fuzziness": "2",
+                                    "value": "lynched"
+                                }
+                            }
+                        }
+                    }
+                }                   
+            ],
+            "slop": 12,
+            "in_order": "false"
+        }
+    }
+}
+```
 We can improve the app with searching words and sentences with one endpoint with join multiple queries. If we set less fuzziness to both **Fuzzy Query** and **Span Near Query** we get better score. However type suggestion may work unexpectively. Or for typo we can use [N-gram tokenizer](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-ngram-tokenizer.html) and we can implement some [Suggesters](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters.html) and so on.<br /><br />
 I did not exactly understand what did they mean with **Discuss the link between best search engine score and performance.**. But performance and score are inversely proportional. For example in our case if we set laziness more we can get more result, but it affects neagtively to the server's performance. 
 
